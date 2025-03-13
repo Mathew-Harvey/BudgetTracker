@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Budget Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container header-container">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i> Budget Tracker
+                </div>
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a href="#" class="active">Dashboard</a></li>
+                        <li><a href="#" id="account-link">Account</a></li>
+                        <li><a href="#" id="logout-link">Logout</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard">
+            <div class="container">
+                <div id="alert-container"></div>
+
+                <!-- Finance Summary Stats -->
+                <section class="stats-grid" id="header-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-balance">$0.00</div>
+                        <div class="stat-label">Total Balance</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="monthly-income">$0.00</div>
+                        <div class="stat-label">Monthly Income</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="monthly-expenses">$0.00</div>
+                        <div class="stat-label">Monthly Expenses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="savings-rate">0%</div>
+                        <div class="stat-label">Savings Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <button class="card-action" id="open-import-btn">Import Bank Data</button>
+                    </div>
+                </section>
+
+                <!-- Dashboard Content -->
+                <div class="dashboard-grid">
+                    <!-- Sidebar -->
+                    <aside class="dashboard-sidebar">
+                        <ul class="sidebar-menu">
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link active" data-section="overview">
+                                    <i class="fas fa-home"></i> Overview
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" data-section="transactions">
+                                    <i class="fas fa-exchange-alt"></i> Transactions
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" data-section="budgets">
+                                    <i class="fas fa-chart-pie"></i> Budgets
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" data-section="goals">
+                                    <i class="fas fa-bullseye"></i> Goals
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" data-section="accounts">
+                                    <i class="fas fa-university"></i> Accounts
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#" class="sidebar-menu-link" data-section="reports">
+                                    <i class="fas fa-chart-line"></i> Reports
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="mt-20 p-10">
+                            <div class="card-action" id="add-transaction-btn">+ Add Transaction</div>
+                            <div class="card-action mt-10" id="add-budget-btn">+ Add Budget</div>
+                            <div class="card-action mt-10" id="add-goal-btn">+ Add Goal</div>
+                            <div class="card-action mt-10" id="add-account-btn">+ Add Account</div>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content Sections -->
+                    <div class="dashboard-main">
+                        <!-- Overview Section -->
+                        <section id="overview-section" class="dashboard-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Spending by Category</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="spending-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Income vs Expenses</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="income-expense-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Recent Transactions</h3>
+                                    <a href="#" class="card-action" data-section="transactions">View All</a>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-container">
+                                        <table class="table" id="recent-transactions-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Description</th>
+                                                    <th>Category</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="recent-transactions-body">
+                                                <tr>
+                                                    <td colspan="4" class="text-center">No transactions found</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Transactions Section -->
+                        <section id="transactions-section" class="dashboard-section hidden">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">All Transactions</h3>
+                                    <div class="card-action" id="add-transaction-btn-2">+ Add Transaction</div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex justify-between mb-20">
+                                        <div class="flex gap-10">
+                                            <input type="text" class="form-input" id="transaction-search" placeholder="Search transactions...">
+                                            <select class="form-input" id="transaction-category-filter">
+                                                <option value="">All Categories</option>
+                                                <option value="Housing">Housing</option>
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Food">Food</option>
+                                                <option value="Utilities">Utilities</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Insurance">Insurance</option>
+                                                <option value="Debt">Debt</option>
+                                                <option value="Entertainment">Entertainment</option>
+                                                <option value="Clothing">Clothing</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Savings">Savings</option>
+                                                <option value="Investments">Investments</option>
+                                                <option value="Income">Income</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex gap-10">
+                                            <input type="date" class="form-input" id="transaction-start-date">
+                                            <input type="date" class="form-input" id="transaction-end-date">
+                                        </div>
+                                    </div>
+
+                                    <div class="table-container">
+                                        <table class="table" id="transactions-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Description</th>
+                                                    <th>Category</th>
+                                                    <th>Amount</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="transactions-body">
+                                                <tr>
+                                                    <td colspan="5" class="text-center">No transactions found</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="pagination" id="transactions-pagination"></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Budgets Section -->
+                        <section id="budgets-section" class="dashboard-section hidden">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Budgets</h3>
+                                    <div class="card-action" id="add-budget-btn-2">+ Add Budget</div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="budgets-container" class="stats-grid">
+                                        <div class="text-center p-20">
+                                            <p>No budgets found. Click "Add Budget" to create your first budget.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Budget Performance</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="budget-performance-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Goals Section -->
+                        <section id="goals-section" class="dashboard-section hidden">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Financial Goals</h3>
+                                    <div class="card-action" id="add-goal-btn-2">+ Add Goal</div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="goals-container" class="stats-grid">
+                                        <div class="text-center p-20">
+                                            <p>No goals found. Click "Add Goal" to set your first financial goal.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Accounts Section -->
+                        <section id="accounts-section" class="dashboard-section hidden">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Your Accounts</h3>
+                                    <div class="card-action" id="add-account-btn-2">+ Add Account</div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="accounts-container" class="stats-grid">
+                                        <div class="text-center p-20">
+                                            <p>No accounts found. Click "Add Account" to add your first account.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Connect to Bank</h3>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-10">Connect to your bank for automatic transaction imports.</p>
+                                    <button class="btn" id="connect-bank-btn">Connect to Bank</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Reports Section -->
+                        <section id="reports-section" class="dashboard-section hidden">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Monthly Reports</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="flex justify-between mb-20">
+                                        <select class="form-input" id="report-year">
+                                            <option value="2023">2023</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2021">2021</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="chart-container">
+                                        <canvas id="monthly-report-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Spending Trends</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="spending-trends-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Net Worth</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="net-worth-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="add-transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Transaction</h3>
+                <button id="close-transaction-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="transaction-form">
+                    <div class="form-group">
+                        <label for="transaction-date" class="form-label">Date</label>
+                        <input type="date" id="transaction-date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-description" class="form-label">Description</label>
+                        <input type="text" id="transaction-description" class="form-input" placeholder="Enter description" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-amount" class="form-label">Amount</label>
+                        <input type="number" id="transaction-amount" class="form-input" placeholder="0.00" step="0.01" required>
+                        <small class="text-muted">Use negative value for expenses</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-category" class="form-label">Category</label>
+                        <select id="transaction-category" class="form-input" required>
+                            <option value="Housing">Housing</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Food">Food</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Debt">Debt</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Education">Education</option>
+                            <option value="Savings">Savings</option>
+                            <option value="Investments">Investments</option>
+                            <option value="Income">Income</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-notes" class="form-label">Notes</label>
+                        <textarea id="transaction-notes" class="form-input" placeholder="Add notes"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-transaction" class="modal-btn btn-cancel">Cancel</button>
+                <button id="save-transaction" class="modal-btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Budget Modal -->
+    <div id="add-budget-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Budget</h3>
+                <button id="close-budget-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="budget-form">
+                    <div class="form-group">
+                        <label for="budget-category" class="form-label">Category</label>
+                        <select id="budget-category" class="form-input" required>
+                            <option value="Housing">Housing</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Food">Food</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Debt">Debt</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Education">Education</option>
+                            <option value="Savings">Savings</option>
+                            <option value="Investments">Investments</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-amount" class="form-label">Monthly Amount</label>
+                        <input type="number" id="budget-amount" class="form-input" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-period" class="form-label">Period</label>
+                        <select id="budget-period" class="form-input" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="yearly">Yearly</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-notes" class="form-label">Notes</label>
+                        <textarea id="budget-notes" class="form-input" placeholder="Add notes"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-budget" class="modal-btn btn-cancel">Cancel</button>
+                <button id="save-budget" class="modal-btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Goal Modal -->
+    <div id="add-goal-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Financial Goal</h3>
+                <button id="close-goal-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="goal-form">
+                    <div class="form-group">
+                        <label for="goal-name" class="form-label">Goal Name</label>
+                        <input type="text" id="goal-name" class="form-input" placeholder="e.g., Emergency Fund" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-category" class="form-label">Category</label>
+                        <select id="goal-category" class="form-input" required>
+                            <option value="home">Home</option>
+                            <option value="car">Car</option>
+                            <option value="education">Education</option>
+                            <option value="vacation">Vacation</option>
+                            <option value="retirement">Retirement</option>
+                            <option value="emergency">Emergency Fund</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-target" class="form-label">Target Amount</label>
+                        <input type="number" id="goal-target" class="form-input" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-date" class="form-label">Target Date</label>
+                        <input type="date" class="form-input" id="goal-date">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="goal-current">Current Amount Saved</label>
+                        <input type="number" class="form-input" id="goal-current" placeholder="0.00">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn btn-cancel" id="cancel-goal">Cancel</button>
+                <button class="modal-btn btn-save" id="save-goal">Save Goal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Income Modal -->
+    <div id="add-income-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Update Income & Net Worth</h3>
+                <button id="close-income-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="annual-income">Your Annual Income</label>
+                    <input type="number" id="annual-income" placeholder="Your annual income">
+                </div>
+                <div class="form-group">
+                    <label for="spouse-income">Spouse/Partner Annual Income (if applicable)</label>
+                    <input type="number" id="spouse-income" placeholder="Spouse/partner annual income">
+                </div>
+                <div class="form-group">
+                    <label for="net-worth">Current Net Worth</label>
+                    <input type="number" id="net-worth" placeholder="Current net worth">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-income" class="modal-btn btn-cancel">Cancel</button>
+                <button id="save-income" class="modal-btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Account Modal -->
+    <div id="add-account-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Account</h3>
+                <button id="close-account-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="account-form">
+                    <div class="form-group">
+                        <label for="account-name" class="form-label">Account Name</label>
+                        <input type="text" id="account-name" class="form-input" placeholder="e.g., Main Checking" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-type" class="form-label">Account Type</label>
+                        <select id="account-type" class="form-input" required>
+                            <option value="checking">Checking</option>
+                            <option value="savings">Savings</option>
+                            <option value="credit">Credit Card</option>
+                            <option value="investment">Investment</option>
+                            <option value="loan">Loan</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-institution" class="form-label">Institution</label>
+                        <input type="text" id="account-institution" class="form-input" placeholder="Bank or institution name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-balance" class="form-label">Current Balance</label>
+                        <input type="number" id="account-balance" class="form-input" placeholder="0.00" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-account" class="modal-btn btn-cancel">Cancel</button>
+                <button id="save-account" class="modal-btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Bank Data Modal -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Bank Statement</h3>
+                <button id="close-import-modal" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-10">Paste your bank statement data in CSV format below. The format should be:</p>
+                <p class="mb-10"><code>Date,Description,Amount,Category(optional)</code></p>
+                <div class="form-group">
+                    <textarea id="import-data" class="form-input" rows="10" placeholder="Paste your bank statement data here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-import" class="modal-btn btn-cancel">Cancel</button>
+                <button id="save-import" class="modal-btn btn-save">Import Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/pages/auth.js"></script>
+    <script src="js/pages/dashboard.js"></script>
+</body>
+</html> 
