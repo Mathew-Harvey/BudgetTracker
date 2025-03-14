@@ -4,15 +4,17 @@ const cors = require('cors');
 const colors = require('colors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const connectDB = require('./config/db');
+// Temporarily commenting out the database connection
+// const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
 const cookieParser = require('cookie-parser');
 
 // Load env vars
 dotenv.config();
 
+// Temporarily commenting out database connection
 // Connect to database
-connectDB();
+// connectDB();
 
 // Route files
 const authRoutes = require('./routes/auth');

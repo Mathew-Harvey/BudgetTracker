@@ -2,6 +2,7 @@ const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
 const Goal = require('../models/Goal');
 const MonthlyData = require('../models/MonthlyData');
+const Account = require('../models/Account');
 
 // @desc    Get user transactions
 // @route   GET /api/finance/transactions
@@ -466,7 +467,7 @@ exports.getMonthlyData = async (req, res, next) => {
 // @desc    Add or update monthly data
 // @route   POST /api/finance/monthlydata
 // @access  Private
-exports.addMonthlyData = async (req, res, next) => {
+exports.addOrUpdateMonthlyData = async (req, res, next) => {
   try {
     // Add user to request body
     req.body.user = req.user.id;
@@ -518,47 +519,81 @@ exports.addMonthlyData = async (req, res, next) => {
 // @desc    Get financial statistics summary
 // @route   GET /api/finance/stats
 // @access  Private
-exports.getFinancialStats = async (req, res, next) => {
+exports.getFinancialStatistics = async (req, res, next) => {
   try {
-    // Get total income, expenses, and savings from transactions
-    const [incomeStats] = await Transaction.aggregate([
-      { $match: { user: req.user._id, amount: { $gt: 0 } } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-
-    const [expenseStats] = await Transaction.aggregate([
-      { $match: { user: req.user._id, amount: { $lt: 0 } } },
-      { $group: { _id: null, total: { $sum: { $abs: '$amount' } } } }
-    ]);
-
-    // Get category spending breakdown
-    const categorySpending = await Transaction.aggregate([
-      { $match: { user: req.user._id, amount: { $lt: 0 } } },
-      { $group: { _id: '$category', amount: { $sum: { $abs: '$amount' } } } },
-      { $project: { _id: 0, category: '$_id', amount: 1 } },
-      { $sort: { amount: -1 } }
-    ]);
-
-    // Get current net worth and savings rate from latest monthly data
-    const latestMonthly = await MonthlyData.findOne({ user: req.user.id })
-      .sort({ year: -1, monthNum: -1 })
-      .limit(1);
-
-    // Get incomplete goals
-    const goals = await Goal.find({ 
+    // Get current month and year
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Get monthly data for current month
+    const monthlyData = await MonthlyData.findOne({
       user: req.user.id,
-      status: 'in-progress'
+      year: currentYear,
+      monthNum: currentMonth
     });
-
+    
+    // Get transactions for current month
+    const startOfMonth = new Date(currentYear, currentMonth, 1);
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    
+    const transactions = await Transaction.find({
+      user: req.user.id,
+      date: { $gte: startOfMonth, $lte: endOfMonth }
+    });
+    
+    // Calculate category spending
+    const categorySpending = {};
+    transactions.forEach(transaction => {
+      if (transaction.type === 'expense') {
+        if (!categorySpending[transaction.category]) {
+          categorySpending[transaction.category] = 0;
+        }
+        categorySpending[transaction.category] += transaction.amount;
+      }
+    });
+    
+    // Get total balance from all accounts
+    const accounts = await Account.find({ user: req.user.id });
+    const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+    
+    // Calculate savings rate
+    let savingsRate = 0;
+    if (monthlyData && monthlyData.income > 0) {
+      savingsRate = ((monthlyData.income - monthlyData.expenses) / monthlyData.income) * 100;
+    }
+    
+    // Get budgets for current month
+    const budgets = await Budget.find({
+      user: req.user.id,
+      startDate: { $lte: endOfMonth },
+      endDate: { $gte: startOfMonth }
+    });
+    
+    // Calculate budget vs actual
+    const budgetComparison = {};
+    budgets.forEach(budget => {
+      const spent = categorySpending[budget.category] || 0;
+      const remaining = budget.amount - spent;
+      const percentUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+      
+      budgetComparison[budget.category] = {
+        budgeted: budget.amount,
+        spent,
+        remaining,
+        percentUsed
+      };
+    });
+    
     res.status(200).json({
       success: true,
       data: {
-        totalIncome: incomeStats ? incomeStats.total : 0,
-        totalExpenses: expenseStats ? expenseStats.total : 0,
-        savingsRate: latestMonthly ? latestMonthly.savingsRate : 0,
-        netWorth: latestMonthly ? latestMonthly.netWorth : 0,
+        totalBalance,
+        monthlyIncome: monthlyData ? monthlyData.income : 0,
+        monthlyExpenses: monthlyData ? monthlyData.expenses : 0,
+        savingsRate,
         categorySpending,
-        activeGoals: goals.length
+        budgetComparison
       }
     });
   } catch (error) {

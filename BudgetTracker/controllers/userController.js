@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const crypto = require('crypto');
 
 // Helper function to send token response
 const sendTokenResponse = (user, statusCode, res) => {
@@ -204,6 +205,131 @@ exports.updatePassword = async (req, res, next) => {
     }
 
     user.password = req.body.newPassword;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server Error'
+    });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const fieldsToUpdate = {
+      name: req.body.name,
+      email: req.body.email,
+      profileName: req.body.profileName,
+      settings: req.body.settings
+    };
+
+    // Remove undefined fields
+    Object.keys(fieldsToUpdate).forEach(
+      key => fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
+    );
+
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+      new: true,
+      runValidators: true
+    });
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server Error'
+    });
+  }
+};
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'No user with that email'
+      });
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset url
+    const resetUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/reset-password.html?token=${resetToken}`;
+
+    // In a real app, you would send an email here
+    // For this demo, we'll just return the token
+    // You can implement email sending with a service like SendGrid
+
+    res.status(200).json({
+      success: true,
+      data: {
+        resetUrl,
+        resetToken
+      }
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Clear reset tokens in case of error
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// @desc    Reset password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resettoken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid token or token expired'
+      });
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
     await user.save();
 
     sendTokenResponse(user, 200, res);
